@@ -16,9 +16,7 @@ from pathlib import Path
 
 import ziglang
 
-from .host import TestHost
-from .host import TestResult
-from .host import TestStatus
+from .host import TestHost, TestResult, TestStatus
 
 
 def main():
@@ -161,9 +159,9 @@ def get_gdb_host(args: argparse.Namespace, local_pwndbg_root: Path) -> TestHost:
         # architectures in their regular binaries. Try the regular GDB.
         supports_arches = "py import os; archs = ['i386', 'aarch64', 'arm', 'mips', 'riscv', 'sparc']; os._exit(3) if len([arch for arch in archs if arch in gdb.architecture_names()]) == len(archs) else os._exit(2)"
 
-        gdb_path_str = shutil.which("pwndbg")
+        gdb_path_str = shutil.which("gdb")
         if gdb_path_str is None:
-            print("ERROR: No 'pwndbg' executables in path")
+            print("ERROR: No 'gdb' executables in path")
             sys.exit(1)
 
         result = subprocess.run([gdb_path_str, "-nx", "-ex", supports_arches], capture_output=True)
@@ -171,11 +169,11 @@ def get_gdb_host(args: argparse.Namespace, local_pwndbg_root: Path) -> TestHost:
         if result.returncode == 3:
             gdb_path = Path(gdb_path_str)
         else:
-            print("ERROR: 'pwndbg' does not support cross architecture targets")
+            print("ERROR: 'gdb' does not support cross architecture targets")
             sys.exit(1)
     else:
         # Use the regular system GDB.
-        gdb_path_str = shutil.which("pwndbg")
+        gdb_path_str = shutil.which("gdb")
         if gdb_path_str is None:
             print("ERROR: No 'gdb' executable in path")
             sys.exit(1)

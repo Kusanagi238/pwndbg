@@ -7,10 +7,7 @@ from pathlib import Path
 from subprocess import CompletedProcess
 from typing import List
 
-from ...host import TestHost
-from ...host import TestResult
-from ...host import _collection_from_pytest
-from ...host import _result_from_pytest
+from ...host import TestHost, TestResult, _collection_from_pytest, _result_from_pytest
 
 
 class GDBTestHost(TestHost):
@@ -97,6 +94,7 @@ class GDBTestHost(TestHost):
         env = os.environ.copy()
         env["TEST_BINARIES_ROOT"] = str(self._binaries_root)
         env["TESTS_PATH"] = str(self._pytest_root)
+        env["LANG"] = "en_US.UTF-8"
 
         result = self._run_gdb("tests.host.gdb.pytests_collect", env=env)
         names = _collection_from_pytest(result, self._pwndbg_root, self._pytest_root)

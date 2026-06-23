@@ -2,25 +2,24 @@ from __future__ import annotations
 
 import re
 from asyncio import CancelledError
-from contextlib import contextmanager
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any
-from typing import Coroutine
-from typing import Generator
-from typing import Iterator
-from typing import List
-from typing import Literal
-from typing import Optional
-from typing import Sequence
-from typing import Tuple
-from typing import TypeVar
+from typing import (
+    Any,
+    Coroutine,
+    Generator,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+)
 
 import gdb
 import gdb.types
-from typing_extensions import Callable
-from typing_extensions import Set
-from typing_extensions import override
+from typing_extensions import Callable, Set, override
 
 import pwndbg
 import pwndbg.gdblib
@@ -28,13 +27,9 @@ import pwndbg.gdblib.events
 import pwndbg.lib.memory
 from pwndbg.aglib import load_aglib
 from pwndbg.dbg import selection
-from pwndbg.gdblib import gdb_version
-from pwndbg.gdblib import load_gdblib
-from pwndbg.lib.arch import ArchAttribute
-from pwndbg.lib.arch import ArchDefinition
-from pwndbg.lib.arch import Platform
-from pwndbg.lib.memory import PAGE_MASK
-from pwndbg.lib.memory import PAGE_SIZE
+from pwndbg.gdblib import gdb_version, load_gdblib
+from pwndbg.lib.arch import ArchAttribute, ArchDefinition, Platform
+from pwndbg.lib.memory import PAGE_MASK, PAGE_SIZE
 
 T = TypeVar("T")
 
@@ -117,8 +112,7 @@ class GDBFrame(pwndbg.dbg_mod.Frame):
         *,
         type: pwndbg.dbg_mod.SymbolLookupType = pwndbg.dbg_mod.SymbolLookupType.ANY,
     ) -> pwndbg.dbg_mod.Value | None:
-        from pwndbg.dbg.gdb.symbol import Domain
-        from pwndbg.dbg.gdb.symbol import lookup_frame_symbol
+        from pwndbg.dbg.gdb.symbol import Domain, lookup_frame_symbol
 
         domain = {
             pwndbg.dbg_mod.SymbolLookupType.ANY: Domain.ANY,
@@ -673,8 +667,7 @@ class GDBProcess(pwndbg.dbg_mod.Process):
         type: pwndbg.dbg_mod.SymbolLookupType = pwndbg.dbg_mod.SymbolLookupType.ANY,
         objfile_endswith: str | None = None,
     ) -> pwndbg.dbg_mod.Value | None:
-        from pwndbg.dbg.gdb.symbol import Domain
-        from pwndbg.dbg.gdb.symbol import lookup_symbol
+        from pwndbg.dbg.gdb.symbol import Domain, lookup_symbol
 
         domain = {
             pwndbg.dbg_mod.SymbolLookupType.ANY: Domain.ANY,
@@ -1381,10 +1374,23 @@ class GDB(pwndbg.dbg_mod.Debugger):
 
         pwnlib.update.disabled = True
 
+        import logging
+
         from pwndbg.commands import load_commands
 
-        load_gdblib()
-        load_aglib()
+        try:
+            load_gdblib()
+            load_aglib()
+        except SyntaxError as e:
+            logging.getLogger(__name__).exception(
+                "Failed to import pwndbg.gdblib due to SyntaxError; skipping gdblib features: %s",
+                e,
+            )
+        except Exception as e:
+            logging.getLogger(__name__).exception(
+                "Failed to import pwndbg.gdblib; skipping gdblib features: %s",
+                e,
+            )
         load_commands()
 
         # Importing `pwndbg.gdblib.prompt` ends up importing code that has the

@@ -7,14 +7,7 @@ import logging
 import os
 import sys
 from collections import defaultdict
-from typing import Any
-from typing import Callable
-from typing import DefaultDict
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import TypeVar
+from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple, TypeVar
 
 import unicorn as U
 from typing_extensions import ParamSpec
@@ -37,20 +30,25 @@ import pwndbg.commands.telescope
 import pwndbg.integration
 import pwndbg.ui
 from pwndbg.aglib.arch import get_thumb_mode_string
-from pwndbg.color import ColorConfig
-from pwndbg.color import ColorParamSpec
-from pwndbg.color import message
-from pwndbg.color import theme
+from pwndbg.color import ColorConfig, ColorParamSpec, message, theme
 from pwndbg.commands import CommandCategory
 
-if pwndbg.dbg.is_gdblib_available():
-    import gdb
-
-    import pwndbg.gdblib.ptmalloc2_tracking
-    import pwndbg.gdblib.symbol
-    import pwndbg.ghidra
-
 log = logging.getLogger(__name__)
+
+if pwndbg.dbg.is_gdblib_available():
+    try:
+        import gdb
+    except Exception:
+        # gdb not available in this environment; skip gdblib imports
+        log.debug("gdb module not importable; skipping gdblib imports", exc_info=True)
+    else:
+        try:
+            # Import gdblib-related modules lazily and handle possible SyntaxError/ImportError
+            import pwndbg.gdblib.ptmalloc2_tracking
+            import pwndbg.gdblib.symbol
+            import pwndbg.ghidra
+        except (ImportError, SyntaxError) as e:
+            log.warning("Skipping gdblib-related imports due to import error: %s", e)
 
 T = TypeVar("T")
 P = ParamSpec("P")

@@ -58,14 +58,33 @@ def main() -> None:
     except gdb.error as e:
         print(f"Warning: Cannot set gdb charset: '{e}'")
 
-    import pwndbg  # noqa: F811
-    import pwndbg.dbg.gdb
+    # Delay importing pwndbg until runtime and guard against import-time errors
+    try:
+        import pwndbg  # noqa: F811
+        import pwndbg.dbg.gdb
+    except SyntaxError:
+        print(
+            "Error: pwndbg failed to import due to a SyntaxError during module import.",
+            file=sys.stderr,
+        )
+        print(traceback.format_exc(), file=sys.stderr)
+        return
+    except Exception:
+        print("Error: pwndbg failed to import.", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+        return
 
     pwndbg.dbg = pwndbg.dbg_mod.gdb.GDB()
     pwndbg.dbg.setup()
 
-    import pwndbg.log
-    import pwndbg.profiling
+    try:
+        import pwndbg.log
+        import pwndbg.profiling
+    except Exception:
+        # If these optional modules fail, log and abort initialization gracefully
+        print("Warning: Failed to import pwndbg.log or pwndbg.profiling.", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+        return
 
     # ColorFormatter relies on pwndbg being loaded, so we can't set it up until now
     handler.setFormatter(pwndbg.log.ColorFormatter())
@@ -77,7 +96,11 @@ def main() -> None:
 
     # We need reimport it here so that it's available at the global scope
     # when some starts a Python interpreter in GDB
-    gdb.execute("py import pwndbg")
+    try:
+        gdb.execute("py import pwndbg")
+    except gdb.error:
+        # If the command cannot be executed in this environment, ignore
+        pass
 
 
 def main_try():
@@ -87,4 +110,5 @@ def main_try():
         main()
     except Exception:
         print(traceback.format_exc(), file=sys.stderr, flush=True)
-        os._exit(1)
+        # Use sys.exit to allow proper cleanup and avoid abruptly killing the process
+        sys.exit(1)
