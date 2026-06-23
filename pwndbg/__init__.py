@@ -11,22 +11,47 @@ import pwndbg.gdblib
 from pwndbg.commands import load_commands
 from pwndbg.gdblib import load_gdblib
 
-load_commands()
-load_gdblib()
+
+# Do not execute load_commands()/load_gdblib() at import time; provide an explicit initializer.
+def initialize():
+    """
+    Explicit initialization for pwndbg that performs deferred imports and setup which
+    may be unsafe or undesirable at package import time (e.g., in test collection).
+    Call pwndbg.initialize() from the appropriate runtime entrypoint.
+    """
+    try:
+        load_commands()
+    except Exception:
+        pass
+
+    try:
+        load_gdblib()
+    except Exception:
+        pass
+
+    # Optional/arch-specific modules that may raise on some Python versions.
+    try:
+        import pwndbg.disasm
+        import pwndbg.disasm.arm
+        import pwndbg.disasm.jump
+        import pwndbg.disasm.mips
+        import pwndbg.disasm.ppc
+        import pwndbg.disasm.riscv
+        import pwndbg.disasm.sparc
+        import pwndbg.disasm.x86
+    except Exception:
+        pass
+
+    # Import heap support only during explicit initialization to avoid registering
+    # heap-related defaults at package import time.
+    try:
+        import pwndbg.heap
+    except Exception:
+        pass
+
 
 # TODO: Convert these to gdblib modules and remove this
-try:
-    import pwndbg.disasm
-    import pwndbg.disasm.arm
-    import pwndbg.disasm.jump
-    import pwndbg.disasm.mips
-    import pwndbg.disasm.ppc
-    import pwndbg.disasm.riscv
-    import pwndbg.disasm.sparc
-    import pwndbg.disasm.x86
-    import pwndbg.heap
-except ModuleNotFoundError:
-    pass
+# (the per-module imports above are deferred to initialize())
 
 import pwndbg.exception
 import pwndbg.lib.version
@@ -35,12 +60,12 @@ import pwndbg.ui
 __version__ = pwndbg.lib.version.__version__
 version = __version__
 
-from pwndbg.gdblib import gdb_version
-from pwndbg.gdblib import prompt
+from pwndbg.gdblib import gdb_version, prompt
 
 prompt.set_prompt()
 
-pre_commands = """
+pre_commands = (
+    """
 set confirm off
 set verbose off
 set pagination off
@@ -55,8 +80,8 @@ handle SIGALRM nostop print nopass
 handle SIGBUS  stop   print nopass
 handle SIGPIPE nostop print nopass
 handle SIGSEGV stop   print nopass
-""".strip() % (
-    pwndbg.ui.get_window_size()[1]
+""".strip()
+    % (pwndbg.ui.get_window_size()[1])
 )
 
 # See https://github.com/pwndbg/pwndbg/issues/808

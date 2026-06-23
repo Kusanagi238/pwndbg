@@ -4,14 +4,7 @@ import argparse
 import functools
 import io
 from enum import Enum
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
-from typing import TypeVar
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, TypeVar
 
 import gdb
 
@@ -21,9 +14,7 @@ import pwndbg.gdblib.qemu
 import pwndbg.gdblib.regs
 import pwndbg.heap
 from pwndbg.color import message
-from pwndbg.heap.ptmalloc import DebugSymsHeap
-from pwndbg.heap.ptmalloc import HeuristicHeap
-from pwndbg.heap.ptmalloc import SymbolUnresolvableError
+from pwndbg.heap.ptmalloc import DebugSymsHeap, HeuristicHeap, SymbolUnresolvableError
 
 T = TypeVar("T")
 
@@ -185,7 +176,7 @@ class Command(gdb.Command):
 
         return True
 
-    def __call__(self, *args: Any, **kwargs: Any) -> str | None:
+    def __call__(self, *args: Any, **kwargs: Any) -> "Optional[str]":
         try:
             return self.function(*args, **kwargs)
         except TypeError as te:
@@ -197,8 +188,8 @@ class Command(gdb.Command):
 
 
 def fix(
-    arg: gdb.Value | str, sloppy: bool = False, quiet: bool = True, reraise: bool = False
-) -> str | gdb.Value | None:
+    arg: "Union[gdb.Value, str]", sloppy: bool = False, quiet: bool = True, reraise: bool = False
+) -> "Optional[Union[str, gdb.Value]]":
     """Fix a single command-line argument coming from the GDB CLI.
 
     Arguments:
@@ -582,7 +573,7 @@ _mask = 0xFFFFFFFFFFFFFFFF
 _mask_val_type = gdb.Value(_mask).type
 
 
-def sloppy_gdb_parse(s: str) -> int | str:
+def sloppy_gdb_parse(s: str) -> "Union[int, str]":
     """
     This function should be used as ``argparse.ArgumentParser`` .add_argument method's `type` helper.
 
